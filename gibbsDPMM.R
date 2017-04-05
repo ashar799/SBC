@@ -13,6 +13,8 @@ tau2.list <- list(0)
 c.list <- list(0)
 That.list <- list(0)
 likli.gibbs <- c(0)
+W.list <- list(0)
+
 
 source('posteriorCLASS.R')
 source('posteriorGMM.R')
@@ -23,7 +25,7 @@ source('calculateLIKELIHOOD.R')
 source('posteriorhyperGMM.R')
 source('posterioralpha.R')
 source('posteriorbeta.R')
-source('linearprediction.R')
+
 
 print("GIBB'S SAMPLING")
 pb <- txtProgressBar(min = 1, max = iter , style = 3)
@@ -79,6 +81,7 @@ for (o in 1:iter) {
   if(o%% iter.thin == 0 ){
     mu.list[[count]] <- mu
     S.list[[count]] <- S
+    W.list[[count]] <- W
     beta0.list[[count]] <- beta0
     betahat.list[[count]] <- betahat  
     sigma2.list[[count]] <- sigma2
@@ -86,12 +89,12 @@ for (o in 1:iter) {
     tau2.list[[count]] <- tau2
     c.list[[count]] <- c
     That.list[[count]] <- That
-    time.predicted <- predicttime(c,Y, That,Time,beta0, betahat, sigma2)$predicttime
+    
 #     nmrse[count] <- calcrmse(time.real,time.predicted)$rmse
     count <- count +1
   }
   
-likli.gibbs[o] <- loglikelihood(c,Y,mu,S,alpha,That, beta0, betahat, sigma2, lambda2, tau2, K, epsilon, W, beta, ro,D, r, si, Time,N, sig2.dat)
+# likli.gibbs[o] <- loglikelihood(c,Y,mu,S,alpha,That, beta0, betahat, sigma2, lambda2, tau2, K, epsilon, W, beta, ro,D, r, si, Time,N, sig2.dat)
 
   
   
@@ -113,6 +116,7 @@ assign("lambda2.list", lambda2.list, envir = .GlobalEnv)
 assign("tau2.list", tau2.list, envir = .GlobalEnv)
 assign("That.list", That.list, envir = .GlobalEnv)
 assign("sigma2.list", sigma2.list, envir = .GlobalEnv)
+assign("W.list", W.list, envir = .GlobalEnv)
 
 
 

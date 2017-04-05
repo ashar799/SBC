@@ -22,10 +22,20 @@ timeparam <- NA
 time.predicted <- c(0)
 cindex <- c(0)
 
-init.likli <- loglikelihood(c,Y,mu,S,alpha,That, beta0, betahat, sigma2, lambda2, tau2, K, epsilon, W, beta, ro,D, r, si, Time,N, sig2.dat) 
+
+likli <- c(0)
+gmm.likli <- c(0)
+aft.likli <- c(0)
+
+
+cog <- loglikelihood(c,Y,mu,S,alpha,That, beta0, betahat, sigma2, lambda2, tau2, K, epsilon, W, beta, ro,D, r, si, Time,N, sig2.dat)
+likli[1] <- cog$loglikelihood 
+gmm.likli[1] <- cog$GMMlikelihood
+aft.likli[1] <- cog$AFTlikelihood
+
 rmse <- c(0)
 randy <- c(0)
-likli <- c(0)
+
 
 
 o =1
@@ -93,8 +103,15 @@ for (o in o.iter:iter.burnin) {
   ##################### Print SOME Statistics #####################################################
   #randy[o] <- adjustedRandIndex(c.true,as.factor(c))
   #print(randy[o])
-  likli[o] <- loglikelihood(c,Y,mu,S,alpha,That, beta0, betahat, sigma2, lambda2, tau2, K, epsilon, W, beta, ro,D, r, si, Time,N, sig2.dat)
-  print(likli[o])
+  cog <- loglikelihood(c,Y,mu,S,alpha,That, beta0, betahat, sigma2, lambda2, tau2, K, epsilon, W, beta, ro,D, r, si, Time,N, sig2.dat)
+  likli[o+1] <- cog$loglikelihood 
+  gmm.likli[o+1] <- cog$GMMlikelihood
+  aft.likli[o+1] <- cog$AFTlikelihood
+  
+  print(likli[o+1])
+  print(gmm.likli[o+1])
+  print(aft.likli[o+1])
+  
   print(o/iter.burnin)
   
   
@@ -125,8 +142,12 @@ assign("tau2", tau2, envir = .GlobalEnv)
 assign("randy.burnin", randy, envir = .GlobalEnv)
 assign("rmse.burnin", rmse, envir = .GlobalEnv)
 assign("likli.burnin", likli, envir = .GlobalEnv)
+assign("gmm.burnin", gmm.likli, envir = .GlobalEnv)
+assign("aft.burnin", aft.likli, envir = .GlobalEnv)
 
 plot(likli, main = 'Burnin Iterations')
+plot(gmm.likli, main = 'GMM Burnin Iterations')
+plot(aft.likli, main = 'AFT Burnin Iterations')
 
 
 

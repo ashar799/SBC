@@ -19,7 +19,10 @@ predictchineseAFTtime = function(Y.input){
   
   cind <- c(0)
   
-  modelweights <- c(0)
+  # modelweights <- c(0)
+  
+  predCIndex.sbc <- c(0)
+  
   
   for (count in 1:Nps){
     
@@ -139,9 +142,9 @@ predictchineseAFTtime = function(Y.input){
      
    } 
     
- modelweights[count] <- sum(exp((1/N.new) *apply(posteriortimeweight,1,sum)))
+ # modelweights[count] <- sum(exp((1/N.new) *apply(posteriortimeweight,1,sum)))
     
-#    cind[count] <- as.numeric(survConcordance(Surv(exp(time.new),censoring.new) ~ exp(-post.time[,count]))[1]) 
+  predCIndex.sbc[count] <- as.numeric(survConcordance(smod.new ~ exp(-post.time[,count]))[1]) 
 # 
 #    print(cind[count])
 
@@ -153,14 +156,14 @@ predictchineseAFTtime = function(Y.input){
     
   }
   
-  #### To calculate average values over MCMC samples
-  modelweight.norm <- modelweights/(sum(modelweights))
-
- post.time.corrected <- post.time 
- for ( i in 1:Nps){
- post.time.corrected[,i] <- post.time[,i] *modelweight.norm[i] 
- }
-post.time.avg <<- apply(post.time.corrected[,1:Nps],1,sum)
- 
-  
+#   #### To calculate average values over MCMC samples
+#   modelweight.norm <- modelweights/(sum(modelweights))
+# 
+#  post.time.corrected <- post.time 
+#  for ( i in 1:Nps){
+#  post.time.corrected[,i] <- post.time[,i] *modelweight.norm[i] 
+#  }
+# post.time.avg <<- apply(post.time.corrected[,1:Nps],1,sum)
+  predCIndex.sbc <<- predCIndex.sbc
+  post.time <<- post.time
 }

@@ -6,19 +6,20 @@
 
 predictCLASS = function(Y.input){
   
+  
+  
   source('priorPARAMETERS.R')
   Y.new  <- Y.input
   N.new <- nrow(Y.new)
   c.new.list <- list(0)
   ## The number of posterior samples
- 
-  post.time  = matrix(NA,nrow = nrow(Y.new), ncol = Nps)
+
   print("GOING THROUGH MCMC Samples")
   pb <- txtProgressBar(min = 1, max = Nps , style = 3)
   
-  ctemp.new <- c(0)
-  cind <- c(0)
   
+
+  ctemp.new <- c(0)
   modelweights <- c(0)
   
   
@@ -63,8 +64,8 @@ predictCLASS = function(Y.input){
     ###### Some quantities used to store probabilities  
     posteriorweight <- matrix(0, nrow = length(active), ncol = N.new)
     weights <- matrix(0, nrow = length(active), ncol = N.new)
-    
-    
+    weights.final <- c(0)
+    ctemp.new <- c(0)
     ## This can't be parallelized !!!!!
     for(l in 1:N.new)  {
       
@@ -98,34 +99,57 @@ predictCLASS = function(Y.input){
         
       }
       
+     weights.final[l] <- posteriorweight[ctemp.new[l],l]
+       
+     }
     
-    modelweights[count] <- sum(exp((1/N.new) *apply(posteriorweight,1,sum)))
+    
+    modelweights[count] <- sum(weights.final)
       
     c.new.list[[count]] <- ctemp.new
     Sys.sleep(0.1)
     setTxtProgressBar(pb, count)
     
     }
-      
-  }
-  #### To calculate the posterior probabilities
-  posteriorprob <- matrix(0, nrow = N.new, ncol = kminus+ 1)
-  rownames(posteriorprob) <- rownames(Y.new)
-  for ( i in 1:N.new){
-    temp.c <- c(0)
-    for ( j in 1:Nps){
-      temp.c[j] <- c.new.list[[j]][i] 
-    }
-    for ( v in 1:kminus){
-      posteriorprob[i,v] <- length(which(temp.c ==v))
-    }
-    posteriorprob[i,kminus+1] <-  length(which(temp.c ==kminus+1)) + length(which(temp.c ==kminus+2))
+  
+  
+  
+  
+  ## Converting the list to a matrix
+  
+  c.matrix.new <- matrix(NA, nrow = N.new, ncol = Nps)
+  for( h in 1:Nps){
+  c.matrix.new[,h] <- c.new.list[[h]]
   }
   
-  modelweight.norm <- modelweights/(sum(modelweights))
   
-  c.new.list.save <<- c.new.list
+  c.matrix.new <<- c.matrix.new
   
-  model.weight <<- modelweight.norm
   
-}
+  
+  
+  
+  ### Build A consensus clustering based on the posterior matrix for both training and testing labels
+  psm2 <- comp.psm(t(c.matrix.new))
+  mpear2 <- maxpear(psm2)
+  adjustedRandIndex(c.true.new,mpear2$cl)
+  
+  
+  
+  ### Generally the MPEAR output needs post-processing
+  ### If we build a cluster specific sbc approach
+  
+  c.sbc.new <<- mpear2$cl
+  
+  # ## As the clusters are different we switch the labels
+  # for ( i in 1:N.new){
+  #   if(mpear2$cl[i] ==1){
+  #     c.sbc.new[i] = 1
+  #   } else {
+  #     c.sbc.new[i] = 2
+  #   }}
+  # 
+  # 
+  test.modelweights <<- modelweights
+  
+ }

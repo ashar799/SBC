@@ -359,6 +359,34 @@ surv.ob <- Surv(time.test,censoring.test)
 survfit <- survfit(surv.ob ~ c.true.new)
 plot(survfit, main = "Testing")
 
+#### Check to see if the Actual Parameters are supplied if the c-index in 0.99
+## Create the beta for the full data set
+beta.list.updated <- list(0)
+for ( i in 1:F ){
+beta.list.updated[[i]] <- c(as.vector(beta.list[[i]]), rep(0,irrel.D))  
+}
+
+## Scaled Y matrix
+Ytemp <-  matrix(NA, nrow = N.train, ncol = D)
+for ( i in 1:F ){
+clu <- which(c.true== i)
+Ytemp[clu,1:D] <- scale(Y[clu,1:D], center = TRUE, scale = TRUE)
+}
+
+time.avg <- c(0)
+for ( i in 1:F ){
+  clu <- which(c.true== i)
+  time.avg[i] <- mean(time[clu])
+}
+## List of predictors
+predictor <- c(0)
+for ( i in 1:N.train){
+predictor[i] <- time.avg[c.true[i]] + as.numeric(beta.list.updated[[c.true[i]]] %*% Ytemp[i,1:D])
+}
+surv.aft <- Surv(exp(time),censoring)
+cindex.true <-  survConcordance(surv.aft ~ exp(-predictor))[[1]]
+
+
 
 
 assign("N",N.train, envir = .GlobalEnv)
@@ -375,6 +403,7 @@ assign("time", time, envir = .GlobalEnv)
 assign("time.new", time.test, envir = .GlobalEnv)
 assign("censoring", censoring, envir = .GlobalEnv)
 assign("censoring.new", censoring.test, envir = .GlobalEnv)
+assign("cindex.true", cindex.true, envir = .GlobalEnv)
 
 
 

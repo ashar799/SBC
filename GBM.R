@@ -1,50 +1,54 @@
-### This simulation Checks if the model works in 2 View Case
-#### Copies from Simulation_Main from the one View Case
-
+###########################################################################################
+### This applies TCGA data set for GBM on ourSBC model ###################################
 rm(list = ls())
-#################################### SIMULATED DATA PROPERTIES ####################################################
-## Number of points
-N.test =  100
-N.train = 100
 
-N <- N.test
+#### Load Data #########
+load("/home/bit/ashar/ExpressionSets/TWO_VIEW/TCGA_GBM/FINAL/DataTCGA-GBM.RData")
+Y1 <- relev$Y1
+Y2 <- relev$Y2
+
+Y1.test <- relev$Y1.test
+Y2.test <- relev$Y2.test
+
+pheno <- relev$pheno
+pheno.test <- relev$pheno.test
+
+
+## Number of points
+N.train =  nrow(Y1)
+N.test = nrow(Y1.test)
+
+N <- N.train
 ## Number of Clusters
 F = 2
 
-## Distribution of the points within three clusters
+######
+D1 <- ncol(Y1)
+D2 <- ncol(Y2)
 
-p.dist = c(0.5,0.5)
+####
+time <- pheno$Survival
+censoring <- pheno$Censoring
 
-## Total Number of features D
+time.new <- pheno.test$Survival
+censoring.new <- pheno.test$Censoring
 
-D1 = 30
-D2 = 30
+###########
+c.true <- pheno$Subtype
+levels(c.true) <- c(1,2,3,4)
 
-## Total Percentage of irrelevant feature
-prob.noise.feature = 0.20
-
-## Overlap between Cluster of molecular Data of the relevant features
-prob.overlap = 0.01
-
-###### Get the Data #####################################
-
-## Initialize the Training Data
-source('multi_simulate.R')
-multi_simulate()
+##########
+c.true.new <- pheno.test$Subtype
+levels(c.true.new) <- c(1,2,3,4)
 
 
 ############################# PARAMETERS for GIBB's SAMPLING ####
-iter = 50
-iter.burnin = 50
+iter = 200
+iter.burnin = 100
 iter.thin  = 5
-k = 2
+k = 4
 K <-  as.integer(N)
 Time <- cbind(time,censoring)
-
-
-######################### Initialize the Parameters ################
-source('multiinitialize.R')
-multiinitialize()
 
 
 ################# GroundTruth (by pasting togehter columns)
@@ -79,5 +83,3 @@ predicted.cindex <- survConcordance(Surv(exp(time.new),censoring.new) ~ exp(-pos
 ########### Check Prediction Ground Truth
 source('TESTmultiComparison.R')
 predictionGroundTruth()
-
-

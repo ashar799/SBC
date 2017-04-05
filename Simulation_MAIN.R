@@ -1,15 +1,17 @@
 ### This is the Main Function and contains a simulation case
 ### Also CHECK THE TIME REQUIRED FOR THE MODEL
-
+setwd("~/Dropbox/Code/DPmixturemodel/SBC")
 
 rm(list = ls())
 #################################### SIMULATED DATA PROPERTIES ####################################################
 ## Number of points
-N.test = 100
-N.train = 100
+N.test = 200
+N.train = 200
 
 ## Number of Clusters
 F = 2
+k =F
+N = N.train
 
 ## Distribution of the points within three clusters
 
@@ -17,14 +19,14 @@ p.dist = c(0.5,0.5)
 
 ## Total Number of features D
 
-D = 20
+D = 54
 
 ## Total Percentage of irrelevant feature
-prob.noise.feature = 0.2
+prob.noise.feature = 0.50
 
 
 ## Overlap between Cluster of molecular Data of the relevant features
-prob.overlap = 0.01
+prob.overlap = 0.02
 
 ###### Get the Data #####################################
 
@@ -36,22 +38,39 @@ simulate()
 Y <- Y.dat
 Y.new <- Y.new.dat
 
-############################# PARAMETERS for GIBB's SAMPLING ####
-iter = 50
-iter.burnin = 50
-iter.thin  = 5
-k = F
-Nps = iter.burnin/iter.thin
+smod <-  Surv(exp(time), censoring)
+smod.new <- Surv(exp(time.new), censoring.new)
+
+
+##################### STATE OF THE ART TECHNIQUES #################################
+##################### BASIC METHODS + SOME ADVANCED METHODS ########################
+source('Comparisonx.R')
+Comparisonx()
+
+source('ComparisionFLX.R')
+ComparisionFLX()
+
+source('ComparisionPReMiuM.R')
+ComparisionPReMiuM()
+setwd("~/Dropbox/Code/DPmixturemodel/SBC")
+
+
+
 
 ######################### Initialize the Parameters ##############################
 source('initialize.R')
 initialize()
 
+###################### Start with a good configuration ###########################
+source('startSBC.R')
+startSBC()
 
-##################### OPTIONAL COMPARISON WITH KNOWN METHODS ######################
-######### BASIC METHODS + SOME ADVANCED METHODS ############################################
-source('TRAINComparison.R')
-TRAINComparison()
+
+############################# PARAMETERS for GIBB's SAMPLING ####
+iter = 50
+iter.burnin = 50
+iter.thin  = 5
+Nps = as.integer(iter.burnin/iter.thin)
 
 
 ########### Train the Model #########################################
@@ -65,7 +84,7 @@ gibbsDPMM()
 ### Good feature selection from heatmap plus cindex plus randindex
 source('MCMCanalyze.R')
 MCMCanalyze()
-  
+recovRandIndex.sbc <<-  as.numeric(adjustedRandIndex(c.true, c.sbc))  
 
 ######## Predict on New Data Set  BASED ON JUST THE MOLECULAR DATA #####################################
 source('predictCLASS.R')
@@ -73,15 +92,24 @@ predictCLASS(Y.new)
 ## Check the predicted Rand Index 
 
 
+
+pc <- prcomp(Y.new)
+pc.pred <- predict(pc,newdata = Y.new)
+p1 <- ggplot(as.data.frame(pc.pred), aes(x=pc.pred[,1], y= pc.pred[,2], colour= as.factor(c.sbc.new))) + ggtitle(" SBC Clustering \n Test Set") + geom_point(shape=19) + labs(y = "PC1", x = "PC2", colour = "Classes") 
+
+surv.fit <- survfit(smod.new ~ c.sbc.new)
+logrank <- survdiff(smod.new ~ c.sbc.new)
+p5 <- ggsurv(surv.fit, main = " DPMM \n Kaplan Meier Estimators") + ggplot2::guides(linetype = FALSE) + ggplot2::scale_colour_discrete(name = 'Classes',breaks = c(1,2),labels = c('1', '2'))
+
+#### Choose that configuration which has the highest difference in survival curves
+predRandIndex.sbc <- c(0)
+for (j in 1:Nps){
+  predRandIndex.sbc[j] <-  adjustedRandIndex(c.true.new,c.matrix.new[,j])
+}
+
+
 source('predictTIME.R')
 predictchineseAFTtime(Y.new)
-### Check of the Predicted C-index 
-predicted.cindex <- survConcordance(Surv(exp(time.new),censoring.new) ~ exp(-post.time.avg))[1]
-
-##################### OPTIONAL COMPARISON WITH KNOWN METHODS ######################
-######### BASIC METHODS + SOME ADVANCED METHODS ############################################
-source('TESTCOMPARISON.R')
-TESTCOMPARISON()
 
 
 
