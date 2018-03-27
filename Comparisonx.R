@@ -49,8 +49,13 @@ Comparisonx = function(){
   
   gr.km <- kmeans(Y, F, nstart =10)
   recovRandIndex.km <<- adjustedRandIndex(c.true,as.factor(gr.km$cluster))
-  label.train <- gr.km$cluster
-  label.test <- knn(train = Y, test = Y.new, cl = label.train, k = F)
+  label.train <- as.factor(gr.km$cluster)
+  ### One has to to tune the k-NN classifier for k ###
+  fitControl <- trainControl(method = "repeatedcv", number = 5,repeats = 5)
+  ### Tune the parameter k 
+  knnFit <- train(x = Y, y = label.train, method =  "knn", trControl = fitControl, preProcess = c("center","scale"), tuneLength = 5)
+  knnPredict <- predict(knnFit,newdata = Y.new )
+  label.test <- knnPredict
   predRandIndex.knear <<- adjustedRandIndex(c.true.new, label.test)
   
   
@@ -120,8 +125,12 @@ Comparisonx = function(){
   
   ######## Model fitting with Penalized Cox PH with TRue Clustering ###########################################
   ######## Model prediction with k-nn based on true clustering #####
-
-  true.knn <- knn(train = Y, test = Y.new, cl = c.true, k = F)
+  label.train <- as.factor(c.true)
+  ### One has to to tune the k-NN classifier for k ###
+  fitControl <- trainControl(method = "repeatedcv", number = 5,repeats = 5)
+  ### Tune the parameter k 
+  knnFit <- train(x = Y, y = label.train, method =  "knn", trControl = fitControl, preProcess = c("center","scale"), tuneLength = 5)
+  true.knn <- predict(knnFit,newdata = Y.new )
   predRandIndex.true.knear <<- adjustedRandIndex(c.true.new, true.knn)
   
   
@@ -148,33 +157,33 @@ Comparisonx = function(){
   
   
   ######## Penalized AFT with TRUE clustering ######################################################
-  linear.aft <- c(0)
-  pred.aft <- c(0)
-  
-  
-  for ( q in 1:F){
-    ind <- which((c.true) == q)
-    ind.new <- which(true.knn == q)
-    L= length(ind)
-    
-    time.tmp <- time[ind]
-    censoring.tmp <- censoring[ind]
-    Y.tmp <- Y[ind,]
-    Y.tmp.new <- Y.new[ind.new,1:D]
-    
-    
-    reg <- cv.glmnet(x = Y.tmp, y = time.tmp, family = "gaussian")
-    linear.pred <- predict(object =reg, newx = Y.tmp, s= "lambda.min")
-    coeff.pred <- coef(object =reg, newx = Y.tmp, s= "lambda.min")
-    rel.coeff <- coeff.pred[2:(D+1)] 
-    ind.rel <- which(rel.coeff !=0)
-    linear.aft[ind] <- predict(object = reg, newx = Y.tmp, s = "lambda.min") 
-    pred.aft[ind.new] <- predict(object = reg, newx = Y.tmp.new, s = "lambda.min")
-  }
-  recovCIndex.true.paft <<- as.numeric(survConcordance(smod ~ exp(-linear.aft))[1])
-  predCIndex.true.knn.paft <<- as.numeric(survConcordance(smod.new ~ exp(-pred.aft))[1])
-  
-  
+  # linear.aft <- c(0)
+  # pred.aft <- c(0)
+  # 
+  # 
+  # for ( q in 1:F){
+  #   ind <- which((c.true) == q)
+  #   ind.new <- which(true.knn == q)
+  #   L= length(ind)
+  #   
+  #   time.tmp <- time[ind]
+  #   censoring.tmp <- censoring[ind]
+  #   Y.tmp <- Y[ind,]
+  #   Y.tmp.new <- Y.new[ind.new,1:D]
+  #   
+  #   
+  #   reg <- cv.glmnet(x = Y.tmp, y = time.tmp, family = "gaussian")
+  #   linear.pred <- predict(object =reg, newx = Y.tmp, s= "lambda.min")
+  #   coeff.pred <- coef(object =reg, newx = Y.tmp, s= "lambda.min")
+  #   rel.coeff <- coeff.pred[2:(D+1)] 
+  #   ind.rel <- which(rel.coeff !=0)
+  #   linear.aft[ind] <- predict(object = reg, newx = Y.tmp, s = "lambda.min") 
+  #   pred.aft[ind.new] <- predict(object = reg, newx = Y.tmp.new, s = "lambda.min")
+  # }
+  # recovCIndex.true.paft <<- as.numeric(survConcordance(smod ~ exp(-linear.aft))[1])
+  # predCIndex.true.knn.paft <<- as.numeric(survConcordance(smod.new ~ exp(-pred.aft))[1])
+  # 
+  # 
   
   
 

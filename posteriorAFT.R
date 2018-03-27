@@ -25,10 +25,14 @@ posteriortimeparameters = function(c, That, lambda2,tau2,sigma2,beta0, betahat, 
       
     } else {
       Ytemp <- scale(Y[clust,1:D], center = TRUE, scale = TRUE)
-             }
+    }
+    
+    ### Extra line of code if there are Identical values ###
+    Ytemp[,colnames(Ytemp)[colSums(is.na(Ytemp)) > 0]] <- 0
+    
     
     ### Part where I use the MONOMVN PACKAGE
-    if (length(clust) > 1){
+    if (length(clust) > 2){
     Ttemp <- as.vector(That[clust])
     ntemp <- length(clust)
     reg.blas <- blasso(Ytemp, Ttemp, T =1000,thin = 10, RJ = TRUE, beta = as.vector(betahat[activeclass[j],]),lambda2 = lambda2[activeclass[j]],s2 = sigma2[activeclass[j]] ,rd =c(r,si), ab = c(1,1),normalize = TRUE, verb = 0)
@@ -50,78 +54,98 @@ posteriortimeparameters = function(c, That, lambda2,tau2,sigma2,beta0, betahat, 
     
     sigma2[activeclass[j]] <- sum$s2[3]
     lambda2[activeclass[j]] <- sum$lambda2[3]
-    } else {
-      
-      
-    tempvector <- as.vector(That[clust])
-    tempmean <- mean(tempvector)
-    tmpscl <- scale(tempvector, center = TRUE, scale =FALSE)
-    tempmatrix <- Ytemp
-    tempnumber <- length(tempvector)
     
-    
-    tempD <- matrix( 0, nrow = D, ncol =D)
     
     if(any(is.na(tau2[activeclass[j],])) == TRUE)
-    {
-      tau2[activeclass[j],] <- priordraw(beta, W, epsilon, ro, r, si,N,D, sig2.dat)$tau2
-    }
-    
-    betahat[activeclass[j],] <- as.vector(priordraw(beta, W, epsilon, ro, r, si,N,D, sig2.dat)$betahat)
-    
-    for ( i in 1:D ) {
-      tempD[i,i] <- tau2[activeclass[j],i]
+    { 
+    cnt <-  which(is.na(tau2[activeclass[j],]))    
+    repl <- rep(1,length(cnt))
+    tau2[activeclass[j],cnt] <- repl
     }
     
     
     
-    
-    
-    
-    ## For updating the sparsity prior
-    lambda2[activeclass[j]] <- rgamma(1, shape = r+D, rate = si + tr(tempD) )
-    
-    #For updating tau2
-    
-    for ( h in 1:D)  {
-      tau2[activeclass[j], h] <- (rinv.gaussian(1,mu= sqrt(lambda2[activeclass[j]] * sigma2[activeclass[j]]/ (betahat[activeclass[j],h])^2), lambda = lambda2[activeclass[j]]))^-1
-    } 
-    
-    #For updating sigma2
-    ## For updating the sigma2 parameter we need temporary matrices
-    
-    tempprod <- NA
-    
-    tempscalesigma1 <- as.vector(tmpscl - Ytemp %*% betahat[activeclass[j], ])
-    
-    tempprod <- tempscalesigma1 %*% tempscalesigma1
-    
-    tempscalesigma2 <- NA
-    
-    tempscalesigma2 <- t(betahat[activeclass[j], ] %*% solve(tempD) %*% betahat[activeclass[j], ] )
-    
-    
-    sigma2[activeclass[j]] <- rinvgamma(1, shape = 1+ 0.5 * (tempnumber +D -1), scale = 1 + (0.5* (tempprod + tempscalesigma2 )) )
-    ## This is because the error of the model may make it computationally infeasible
-    
-    
-    ## For updating Betahat we need some matrices
-    tempD <- matrix( 0, nrow = D, ncol =D)
-    for ( i in 1:D ) {
-      tempD[i,i] <- tau2[activeclass[j],i]
-    }
-    
-    tempA <-   matrix(NA, nrow = D, ncol = D)
-
-    tempA <- t(Ytemp) %*% Ytemp + solve(tempD)
-    
-    
-    betahat[activeclass[j],] <- mvrnorm(1, mu = solve(tempA) %*% t(tempmatrix) %*% tmpscl, Sigma=  sigma2[activeclass[j]] * solve(tempA))
-    
-    
-    beta0[activeclass[j]] <- rnorm(1, mean = tempmean, sd= sqrt(sigma2[activeclass[j]]/tempnumber))
-
-  
+    }else {
+      ### Just Use Prior Parameters if there are two few data points, So just Use Prior Knowledge
+      priorone <- priordraw(beta, W, epsilon, ro, r, si,N,D, sig2.dat)
+      beta0[activeclass[j]] <- priorone$beta0 
+      sigma2[activeclass[j]] <- priorone$sigma2
+      betahat[activeclass[j],1:D] <- priorone$betahat 
+      lambda2[activeclass[j]] <- priorone$lambda2 
+      tau2[activeclass[j], 1:D] <- priorone$tau2
+      
+    #   betahat[activeclass[j],] <- as.vector(priordraw(beta, W, epsilon, ro, r, si,N,D, sig2.dat)$betahat)
+    #   
+    #   
+    #   tempvector <- as.vector(That[clust])
+    #   tempmean <- mean(tempvector)
+    #   tmpscl <- scale(tempvector, center = TRUE, scale =FALSE)
+    #   tempmatrix <- Ytemp
+    #   tempnumber <- length(tempvector)
+    # 
+    # 
+    # tempD <- matrix( 0, nrow = D, ncol =D)
+    # 
+    # if(any(is.na(tau2[activeclass[j],])) == TRUE)
+    # {
+    #   tau2[activeclass[j],] <- priordraw(beta, W, epsilon, ro, r, si,N,D, sig2.dat)$tau2
+    # }
+    # 
+    # 
+    # 
+    # for ( i in 1:D ) {
+    #   tempD[i,i] <- tau2[activeclass[j],i]
+    # }
+    # 
+    # 
+    # 
+    # 
+    # 
+    # 
+    # ## For updating the sparsity prior
+    # lambda2[activeclass[j]] <- rgamma(1, shape = r+D, rate = si + tr(tempD) )
+    # 
+    # #For updating tau2
+    # 
+    # for ( h in 1:D)  {
+    #   tau2[activeclass[j], h] <- (rinv.gaussian(1,mu= sqrt(lambda2[activeclass[j]] * sigma2[activeclass[j]]/ (betahat[activeclass[j],h])^2), lambda = lambda2[activeclass[j]]))^-1
+    # } 
+    # 
+    # #For updating sigma2
+    # ## For updating the sigma2 parameter we need temporary matrices
+    # 
+    # tempprod <- NA
+    # 
+    # tempscalesigma1 <- as.vector(tmpscl - Ytemp %*% betahat[activeclass[j], ])
+    # 
+    # tempprod <- tempscalesigma1 %*% tempscalesigma1
+    # 
+    # tempscalesigma2 <- NA
+    # 
+    # tempscalesigma2 <- t(betahat[activeclass[j], ] %*% solve(tempD) %*% betahat[activeclass[j], ] )
+    # 
+    # 
+    # sigma2[activeclass[j]] <- rinvgamma(1, shape = 1+ 0.5 * (tempnumber +D -1), scale = 1 + (0.5* (tempprod + tempscalesigma2 )) )
+    # ## This is because the error of the model may make it computationally infeasible
+    # 
+    # 
+    # ## For updating Betahat we need some matrices
+    # # tempD <- matrix( 0, nrow = D, ncol =D)
+    # # for ( i in 1:D ) {
+    # #   tempD[i,i] <- tau2[activeclass[j],i]
+    # # }
+    # # 
+    # # tempA <-   matrix(NA, nrow = D, ncol = D)
+    # # 
+    # # tempA <- t(Ytemp) %*% Ytemp + solve(tempD)
+    # # 
+    # # 
+    # # betahat[activeclass[j],] <- mvrnorm(1, mu = solve(tempA) %*% t(tempmatrix) %*% tmpscl, Sigma=  sigma2[activeclass[j]] * solve(tempA))
+    # # 
+    # 
+    # beta0[activeclass[j]] <- rnorm(1, mean = tempmean, sd= sqrt(sigma2[activeclass[j]]/tempnumber))
+    # 
+    # 
   
   }
 

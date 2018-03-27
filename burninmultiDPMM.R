@@ -3,6 +3,7 @@
 burninmultiDPMM = function(){
   
 source('priorPARAMETERS.R')
+source('multilikelihood.R')
 param <- NA
 paramtime1 <- NA
 paramtime2 <- NA
@@ -14,8 +15,10 @@ loglike<- rep(0, iter)
 
 
 
+burnin.likli <- c(0)
+gmm.likli <- c(0)
+aft.likli <- c(0)
 randy <- c(0)
-likli <- c(0)
 
 #################### BURNIN PHASE ###################################################
 print("BURNIN...PHASE")
@@ -71,29 +74,7 @@ for (o in 1:iter.burnin) {
   gmmx2$ro <- hypercognate2$ro
   
   
-  ### Updating Beta parameter for the first view #################
-#   source('posteriorbeta.R')
-#   if( o%%10 == 0){
-#     res <- try(posteriorbeta(c, gmmx1$beta, D1, gmmx1$S, gmmx1$W))
-#     if (class(res) == "try-error"){
-#       gmmx1$beta = gmmx1$beta
-#     } else{
-#       gmmx1$beta <- posteriorbeta(gmmx1$beta, D1, gmmx1$S, gmmx1$W)
-#       
-#     }
-#   } 
-#   ### Updating Beta parameter for the second view #################
-#   source('posteriorbeta.R')
-#   if( o%%10 == 0){
-#     res <- try(posteriorbeta(c, gmmx2$beta, D2, gmmx2$S, gmmx2$W))
-#     if (class(res) == "try-error"){
-#       gmmx2$beta = gmmx2$beta
-#     } else{
-#       gmmx2$beta <- posteriorbeta(gmmx2$beta, D2, gmmx2$S, gmmx2$W)
-#       
-#     }
-#   } 
-#   
+
   
   
   ################# INDICATOR VARIABLE ##################################################################
@@ -128,10 +109,16 @@ for (o in 1:iter.burnin) {
   
   
   ##################### Print SOME Statistics #####################################################
-  #randy[o] <- adjustedRandIndex(c.true,as.factor(c))
-  #print(randy[o])
-  likli[o] <- multiloglikelihood(c,Y1,Y2,D1,D2,That,K, beta, ro, r, si,sig2.dat,gmmx1, gmmx2, regy1, regy2)
-  print(likli[o])
+  randy[o] <- adjustedRandIndex(c.kmeans,as.factor(c))
+  print(randy[o])
+  cg <- multiloglikelihood(c,Y1,Y2,D1,D2,That,K, beta, ro, r, si,sig2.dat,gmmx1, gmmx2, regy1, regy2)
+  burnin.likli[o] <- cg$loglikelihood
+  gmm.likli[o] <- cg$GMMlikelihood
+  aft.likli[o] <- cg$AFTlikelihood 
+  
+  print(burnin.likli[o])
+  print(gmm.likli[o])
+  print(aft.likli[o])
   print(o/iter.burnin)
   
 } 
@@ -142,10 +129,13 @@ assign("gmmx2", gmmx2, envir = .GlobalEnv)
 assign("regy1", regy1, envir = .GlobalEnv)
 assign("regy2", regy2, envir = .GlobalEnv)
 assign("c", c, envir = .GlobalEnv)
-assign("randy.burnin", randy, envir = .GlobalEnv)
-assign("likli.burnin", likli, envir = .GlobalEnv)
+assign("burnin.likli", burnin.likli, envir = .GlobalEnv)
+assign("gmm.likli", gmm.likli, envir = .GlobalEnv)
+assign("aft.likli", gmm.likli, envir = .GlobalEnv)
 
-plot(likli, main = 'Burnin Iterations')
 
+plot(gmm.likli, main = 'GMM Burnin Iterations')
+plot(aft.likli, main = 'AFT Burnin Iterations')
+plot(burnin.likli, main = 'Overall Burnin Iterations')
 }
 

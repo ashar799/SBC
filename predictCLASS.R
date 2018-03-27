@@ -99,7 +99,7 @@ predictCLASS = function(Y.input){
         
       }
       
-     weights.final[l] <- posteriorweight[ctemp.new[l],l]
+     weights.final[l] <- dMVN(as.vector(t(Y.new[l,1:D])), mean = mu[ctemp.new[l],1:D], Q = S[ctemp.new[l],1:D,1:D], log =TRUE) 
        
      }
     
@@ -129,17 +129,6 @@ predictCLASS = function(Y.input){
   
   
   
-  ### Build A consensus clustering based on the posterior matrix for both training and testing labels
-  psm2 <- comp.psm(t(c.matrix.new))
-  mpear2 <- maxpear(psm2)
-  adjustedRandIndex(c.true.new,mpear2$cl)
-  
-  
-  
-  ### Generally the MPEAR output needs post-processing
-  ### If we build a cluster specific sbc approach
-  
-  c.sbc.new <<- mpear2$cl
   
   # ## As the clusters are different we switch the labels
   # for ( i in 1:N.new){

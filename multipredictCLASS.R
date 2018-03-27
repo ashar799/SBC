@@ -25,6 +25,8 @@ multipredictCLASS = function(Y1.test, Y2.test){
   Ytemp1.scaled <- matrix(NA, nrow = N, ncol = D1)
   Ytemp2.scaled <- matrix(NA, nrow = N, ncol = D2)
   
+  modelweights <- c(0)
+  
   
   for (count in 1:Nps){
     
@@ -117,7 +119,7 @@ multipredictCLASS = function(Y1.test, Y2.test){
     #######################################################
     ctemp.new = c(0)
     
-    
+    weights.final <- c(0)
     ## This can't be parallelized !!!!!
     for(l in 1:N.new)  {
       
@@ -144,30 +146,38 @@ multipredictCLASS = function(Y1.test, Y2.test){
       } else {
         ctemp.new[l] <- sample(active, 1)
       }
-    }
     
+      weights.final[l] <- dMVN(x = as.vector(t(Ytemp1[l,1:D1])), mean = gmmx1.tmp$mu[ctemp.new[l] ,1:D1],  Q = gmmx1.tmp$S[ctemp.new[l] ,1:D1,1:D1], log = TRUE) +  dMVN(x = as.vector(t(Ytemp2[l,1:D2])), mean = gmmx2.tmp$mu[ctemp.new[l],1:D2],  Q = gmmx2.tmp$S[ctemp.new[l],1:D2,1:D2], log =TRUE) 
+      }
+    modelweights[count] <- sum(weights.final)
     c.new.list[[count]] <- ctemp.new 
     Sys.sleep(0.1)
     setTxtProgressBar(pb, count)
     
   }
   
-  #### To calculate the posterior probabilities
-  posteriorprob <- matrix(0, nrow = N.new, ncol = kminus+ 1)
-  
-  for ( i in 1:N.new){
-    temp.c <- c(0)
-    for ( j in 1:Nps){
-      temp.c[j] <- c.new.list[[j]][i] 
-    }
-    for ( v in 1:kminus){
-      posteriorprob[i,v] <- length(which(temp.c ==v))
-    }
-    posteriorprob[i,kminus+1] <-  length(which(temp.c ==kminus+1)) + length(which(temp.c ==kminus+2))
+  c.matrix.new <- matrix(NA, nrow = N.new, ncol = Nps)
+  for( h in 1:Nps){
+    c.matrix.new[,h] <- c.new.list[[h]]
   }
   
-  posteriorprob <- posteriorprob/Nps
   
-  posteriorprob <<- posteriorprob
+  c.matrix.new <<- c.matrix.new
+  
+  ### Build A consensus clustering based on the posterior matrix for both training and testing labels
+  psm2 <- comp.psm(t(c.matrix.new))
+  mpear2 <- maxpear(psm2)
+  adjustedRandIndex(c.true.new,mpear2$cl)
+  
+  
+  
+  ### Generally the MPEAR output needs post-processing
+  ### If we build a cluster specific sbc approach
+  
+  c.sbc.new <<- mpear2$cl
+  
+  #### To calculate the posterior probabilities
+  
+  test.modelweights <<- modelweights
   
 }

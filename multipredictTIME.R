@@ -191,17 +191,17 @@ multipredictchineseAFTtime = function(Y1.test, Y2.test){
     } 
     
     cind[count] <- as.numeric(survConcordance(Surv(exp(time.new),censoring.new) ~ exp(-post.time[,count]))[1]) 
-    print(cind[count])
+    # print(cind[count])
     
     #   Sys.sleep(0.1)
-    #   setTxtProgressBar(pb, count)
+      setTxtProgressBar(pb, count)
     #     
     
   }
   
   #### To calculate average values over MCMC samples
   post.time.avg <<- apply(post.time[,1:Nps],1,mean)
-  
+  predCIndex.sbc <<- cind
   
   
 }

@@ -13,6 +13,10 @@ ComparisionFLX = function(){
   #################Flexmix Clustering ################################################################
   ##############################################################################
   data <- data.frame(y =time, x =  Y)
+
+  
+  
+  
   
   ## The cross validation folds for choosing lambda
   fo <- sample(rep(seq(10), length = nrow(data)))

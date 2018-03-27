@@ -35,7 +35,7 @@ multiposteriorchineseAFT = function(c,Y1,Y2,D1,D2,That, K, r, si,sig2.dat,gmmx1,
   }
   
   
-  
+  weights.final <- c(0)
   
   ## This can't be parallelized !!!!!
   for(l in 1:N)  {
@@ -226,6 +226,8 @@ multiposteriorchineseAFT = function(c,Y1,Y2,D1,D2,That, K, r, si,sig2.dat,gmmx1,
     
     ## Calculating the normalization constant for probabilities
     post <- exp(posterior) 
+    
+    
     
     ctemp[l] <- sample(active, 1, prob= post, replace = TRUE)
     }

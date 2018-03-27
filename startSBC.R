@@ -6,7 +6,7 @@
 
 startSBC = function(){
   
-  smod <-  Surv(exp(time), censoring)
+  
   ################################# USE k-Means and Then FlxMIX  ###################################################
   ##### See which gives a better c-index recovery #######
   

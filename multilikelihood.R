@@ -1,5 +1,10 @@
 multiloglikelihood = function(c,Y1,Y2,D1,D2,That,K, beta, ro, r, si,sig2.dat,gmmx1, gmmx2, regy1, regy2 ) {
   
+  GMMlikelihood <- c(0)
+  AFTlikelihood <- c(0)
+  loglikelihood <- c(0)
+  
+  
   gmmx1 <- gmmx1
   gmmx2 <- gmmx2
   regy1 <- regy1
@@ -52,19 +57,20 @@ clust <- which(c == activeclass[j])
 luk1 <- c(0)
 luk2 <- c(0)
 for ( l in 1:length(clust)) {
-  if (Time[clust[l],2]==1){
+  
     luk1[l] <- dMVN(x = as.vector(t(Ytemp1[clust[l],])), mean = gmmx1$mu[c[clust[l]],1:D1],  Q = gmmx1$S[c[clust[l]],1:D1,1:D1], log =TRUE) +  dMVN(x = as.vector(t(Ytemp2[clust[l],])), mean = gmmx2$mu[c[clust[l]],1:D2],  Q = gmmx2$S[c[clust[l]],1:D2,1:D2], log = TRUE) 
     luk2[l] <- dnorm(x = That[clust[l]], mean = regy1$beta0[c[clust[l]]] + regy1$betahat[c[clust[l]],] %*% as.vector(t(Ytemp1.scaled[clust[l],])), sd = sqrt(regy1$sigma2[c[clust[l]]]), log =TRUE) +  dnorm(x = That[clust[l]], mean = regy2$beta0[c[clust[l]]] + regy2$betahat[c[clust[l]],] %*% as.vector(t(Ytemp2.scaled[clust[l],])), sd = sqrt(regy2$sigma2[c[clust[l]]]), log = TRUE) 
-  } else{
-    luk1[l] <- dMVN(x = as.vector(t(Ytemp1[clust[l],])), mean = gmmx1$mu[c[clust[l]],1:D1],  Q = gmmx1$S[c[clust[l]],1:D1,1:D1], log =TRUE) +  dMVN(x = as.vector(t(Ytemp2[clust[l],])), mean = gmmx2$mu[c[clust[l]],1:D2],  Q = gmmx2$S[c[clust[l]],1:D2,1:D2], log =TRUE)  
-    luk2[l] <- log(dtruncnorm(x = Time[clust[l],1], a = Time[clust[l],1], b = Inf, mean = regy1$beta0[c[clust[l]]] + regy1$betahat[c[clust[l]],] %*% as.vector(t(Ytemp1.scaled[clust[l],])), sd = sqrt(regy1$sigma2[c[clust[l]]])))  + log(dtruncnorm(x = Time[clust[l],1], a = Time[clust[l],1], b = Inf, mean = regy2$beta0[c[clust[l]]] + regy2$betahat[c[clust[l]],] %*% as.vector(t(Ytemp2.scaled[clust[l],])), sd = sqrt(regy2$sigma2[c[clust[l]]]))) 
-  }
-}
-loglikelihood[j] <- sum(luk1) + sum(luk2)
-
-}
   
-  return(sum(loglikelihood))
+}
+GMMlikelihood[j] <- sum(luk1)
+AFTlikelihood[j] <- sum(luk2)
+loglikelihood[j] <-  GMMlikelihood[j] +  AFTlikelihood[j]
+
+
+  }
+  
+  list('loglikelihood' = sum(loglikelihood),'GMMlikelihood' = sum(GMMlikelihood), 'AFTlikelihood' = sum(AFTlikelihood))
+  
   
   
 }

@@ -73,9 +73,12 @@ That <- ti$time
 
 ################# K-Means BLASSO INITIALIZATION ############################################
 G <- F
+
 k.data <- kmeans(Y,F,nstart =10)
+
 c <- k.data$cluster
 
+c.kmeans <<- c
 #### Under special cases
 ###### c <- c.true
 

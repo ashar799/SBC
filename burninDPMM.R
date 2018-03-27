@@ -101,8 +101,8 @@ for (o in o.iter:iter.burnin) {
   
   
   ##################### Print SOME Statistics #####################################################
-  #randy[o] <- adjustedRandIndex(c.true,as.factor(c))
-  #print(randy[o])
+  randy[o] <- adjustedRandIndex(c.kmeans,as.factor(c))
+  print(randy[o])
   cog <- loglikelihood(c,Y,mu,S,alpha,That, beta0, betahat, sigma2, lambda2, tau2, K, epsilon, W, beta, ro,D, r, si, Time,N, sig2.dat)
   likli[o+1] <- cog$loglikelihood 
   gmm.likli[o+1] <- cog$GMMlikelihood

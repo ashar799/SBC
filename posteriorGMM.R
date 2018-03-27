@@ -19,7 +19,7 @@ posteriorGMMparametrs = function(c,Y,mu,S, alpha,K, epsilon, W, beta, ro, N, D) 
         S[activeclust[j],1:D,1:D] <- rWISHART(1, (beta + temp.number), solve(Zi))
       }
       
-      S[activeclust[j],1:D,1:D] <- rWISHART(1, (beta + temp.number), solve((Zi)))
+      #S[activeclust[j],1:D,1:D] <- rWISHART(1, (beta + temp.number), solve((Zi)))
       ## Posterior estimate for the mean
       mu[activeclust[j],1:D] <- rMVN(n=1, mean = (ro*epsilon + (temp.number)* tempmean )/(ro + temp.number ), Q = (ro+ temp.number)*S[activeclust[j],1:D,1:D])$x
     }

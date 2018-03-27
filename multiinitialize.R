@@ -102,6 +102,8 @@ multiinitialize = function(){
   source('multikmeansBlasso.R')
   km <- multikmeansBlasso(c,Y1,Y2,D1,D2,That,K, r, si,sig2.dat,gmmx1, gmmx2, regy1, regy2,surv.obj )
   c <- km$c
+  c.kmeans <<- c
+  
   gmmx1 <- km$gmmx1
   gmmx2 <- km$gmmx2 
   regy1 <- km$regy1

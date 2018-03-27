@@ -5,8 +5,8 @@ setwd("~/Dropbox/Code/DPmixturemodel/SBC")
 rm(list = ls())
 #################################### SIMULATED DATA PROPERTIES ####################################################
 ## Number of points
-N.test = 200
-N.train = 200
+N.test = 500
+N.train = 500
 
 ## Number of Clusters
 F = 2
@@ -26,7 +26,7 @@ prob.noise.feature = 0.50
 
 
 ## Overlap between Cluster of molecular Data of the relevant features
-prob.overlap = 0.02
+prob.overlap = 0.05
 
 ###### Get the Data #####################################
 
@@ -67,10 +67,10 @@ startSBC()
 
 
 ############################# PARAMETERS for GIBB's SAMPLING ####
-iter = 50
+iter = 20
 iter.burnin = 50
-iter.thin  = 5
-Nps = as.integer(iter.burnin/iter.thin)
+iter.thin  = 2
+Nps = as.integer(iter/iter.thin)
 
 
 ########### Train the Model #########################################
@@ -86,11 +86,21 @@ source('MCMCanalyze.R')
 MCMCanalyze()
 recovRandIndex.sbc <<-  as.numeric(adjustedRandIndex(c.true, c.sbc))  
 
+pc <- prcomp(Y)
+pc.pred <- predict(pc,newdata = Y)
+p1 <- ggplot(as.data.frame(pc.pred), aes(x=pc.pred[,1], y= pc.pred[,2], colour= as.factor(c.sbc))) + ggtitle(" SBC Clustering \n Test Set") + geom_point(shape=19) + labs(y = "PC1", x = "PC2", colour = "Classes") 
+
+
+
+
+
 ######## Predict on New Data Set  BASED ON JUST THE MOLECULAR DATA #####################################
 source('predictCLASS.R')
 predictCLASS(Y.new)
 ## Check the predicted Rand Index 
 
+predRandIndex.sbc <<-  as.numeric(adjustedRandIndex(c.true.new, c.sbc.new))  
+c.sbc.new.knn <<- knn(train = Y, test = Y.new, cl = c.sbc, k = F)
 
 
 pc <- prcomp(Y.new)
@@ -106,6 +116,32 @@ predRandIndex.sbc <- c(0)
 for (j in 1:Nps){
   predRandIndex.sbc[j] <-  adjustedRandIndex(c.true.new,c.matrix.new[,j])
 }
+
+### Use SBC + knn to make predictions on future probabilities ####
+cl.old <-  c.sbc
+cl.new <- c.sbc.new.knn
+
+### Use PAFT now to build the corresponding cluster specific PAFT models
+pre.sbc <- c(0)
+
+for ( q in 1:F){
+  ind <- which(cl.old == q)
+  ind.new <- which(cl.new == q)
+
+  time.tmp <- time[ind]
+
+  Y.tmp <- Y[ind,]
+  Y.tmp.new <- Y.new[ind.new,]
+
+  reg <- cv.glmnet(x = Y.tmp, y = time.tmp, family = "gaussian")
+  pre.sbc[ind.new] <- predict(object = reg, newx = Y.tmp.new, s = "lambda.min")
+}
+predCIndex.sbc.knn.aft  <<- as.numeric(survConcordance(smod.new ~ exp(-pre.sbc))[1])
+
+
+
+
+
 
 
 source('predictTIME.R')

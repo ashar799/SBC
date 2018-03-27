@@ -5,39 +5,34 @@
 
 analyzemultiDPMM = function(){
   
+  Y <- cbind(Y1,Y2)
   
   ############# TRAININIG DATA ###########################################
   #######################################################################
   ########################################################################
   #### This function calculates some important metrices for the TRAINING DATA Data
-  #### Adjusted RandIndex
+
   #### C-Index
-  #### Brier Scores for the Survival Curves
-  #### Point Estimate of Clsuter Assignments
-  ##### Brier Scores for feature Selection
+  #### Point Estimate of Clsuter Assignments based on m-pear
+ 
   
   ########## ANLAYSING THE MCMC samples AND CALCULATING METRICES #######################################################
   
   Nps = as.integer(iter/ iter.thin)
   count <- Nps
-  final.rand <- c(0)
+  
   
   ############ The Matrices that will store the results #################################################
-  final.rand <- c(0)
   cindex.final1 <- c(0)
   cindex.final2 <- c(0)   
   cindex.final <- c(0)  
-  brier.final <- matrix(NA, nrow = Nps, ncol = F)
-  
+  recovCIndex.isbc.paft <- c(0)
   ################ Begin Analysig the MCMC samples #######################################################
   
   
   
   for (h in 1:Nps){
     ### Adjusted Rand Indices
-    #final.rand[h] <- adjustedRandIndex(c.list[[h]],as.factor(c.true))
-    
-    ### See C-Index (concordance index)
     surv.aft <- Surv(exp(time),censoring)
     
     ### Predict Time from the model
@@ -52,7 +47,31 @@ analyzemultiDPMM = function(){
     tem.tim <- as.vector(unlist(multipredictlinear(c.list[[h]],  est.regy1[[h]], est.regy2[[h]] )))
     
     cindex.final[h] <-  survConcordance(surv.aft ~ exp(-tem.tim))[[1]]
-  }
+  
+    
+    
+    ###### penAFT ###################################################################
+    ######## Penalized AFT with k-means clustering ######################################################
+    isbc.aft <- c(0)
+    for ( q in 1:F){
+      ind <- which((c.list[[h]]) == q)
+      L= length(ind)
+      
+      time.tmp <- time[ind]
+      censoring.tmp <- censoring[ind]
+      Y.tmp <- Y[ind,]
+      
+      reg <- cv.glmnet(x = Y.tmp, y = time.tmp, family = "gaussian")
+      coeff.pred <- coef(object =reg, newx = Y.tmp, s= "lambda.min")
+      isbc.aft[ind] <- predict(object = reg, newx = Y.tmp, s = "lambda.min") 
+    }
+    recovCIndex.isbc.paft[h] <- as.numeric(survConcordance(smod ~ exp(-isbc.aft))[1])
+    
+    
+    
+    
+    
+    }
   
   
   
@@ -68,7 +87,15 @@ analyzemultiDPMM = function(){
   }
   
   
-  c.final <- apply(c.matrix,1,median)
+  ###############################################
+  ###### Calculating POINT ESTIMATES ############
+  ###############################################
+  psm <- comp.psm(t(c.matrix))
+  mpear <- maxpear(psm)
+  
+  ### If we build a cluster specific sbc approach
+  c.final <<- mpear$cl
+  c.sbc <<- mpear$cl
   
   active <- as.numeric(rownames(table(c.final)))
   
@@ -121,9 +148,10 @@ analyzemultiDPMM = function(){
   heatmap.2(t(as.matrix(heatmapdata2)),dendrogram="none", col =cm.colors(180), margins=c(6,10), main = "Posterior prob. \n for Selection for Data set 2 ", cexCol = 0.85, cexRow = 0.7, Rowv = FALSE)
   
   #final.rand <<- final.rand
-  cindex.final1 <<- cindex.final1
-  cindex.final2 <<- cindex.final2
-  cindex.final <<- cindex.final
+  recovCIndex.isbc1 <<- cindex.final1
+  recovCIndex.isbc2 <<- cindex.final2
+  recovCIndex.isbc <<- cindex.final
+  recovCIndex.sbc.paft <<- recovCIndex.isbc.paft
   c.final <<- c.final
   final.betahat1 <<- final.betahat1
   final.betahat2 <<- final.betahat2

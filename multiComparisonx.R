@@ -12,7 +12,7 @@
 ### iCLUSTER +AFT
 
 
-multigroundtruth = function(){
+multiComparisonx = function(){
   
   Y <- cbind(Y1,Y2)
   Y.new <- cbind(Y1.test,Y2.test)
@@ -121,27 +121,27 @@ multigroundtruth = function(){
   ################################################################################
   ## Fit a AFT model with FLXmix clustering
   
-  linear.flx <- c(0)
-  beta.flx <- matrix(0, nrow = D, ncol = F)
-  for ( q in 1:F){
-    ind <- which(clusters(gr.flx) == q)
-    L= length(ind)
-    
-    time.tmp <- time[ind]
-    censoring.tmp <- censoring[ind]
-    Y.tmp <- Y[ind,]
-    
-    reg <- cv.glmnet(x = Y.tmp, y = time.tmp, family = "gaussian")
-    
-    coeff.pred <- coef(object =reg, newx = Y.tmp, s= "lambda.min")
-    rel.coeff <- coeff.pred[2:(D+1)] 
-    beta.flx[1:D,q] <- ((rel.coeff != 0)+0)
-    
-    linear.flx[ind] <- predict(object = reg, newx = Y.tmp, s = "lambda.min") 
-  }
-  recovCIndex.flx.aft  <<- as.numeric(survConcordance(smod ~ exp(-linear.flx))[1])
-  
-  
+  # linear.flx <- c(0)
+  # beta.flx <- matrix(0, nrow = D, ncol = F)
+  # for ( q in 1:F){
+  #   ind <- which(clusters(gr.flx) == q)
+  #   L= length(ind)
+  #   
+  #   time.tmp <- time[ind]
+  #   censoring.tmp <- censoring[ind]
+  #   Y.tmp <- Y[ind,]
+  #   
+  #   reg <- cv.glmnet(x = Y.tmp, y = time.tmp, family = "gaussian")
+  #   
+  #   coeff.pred <- coef(object =reg, newx = Y.tmp, s= "lambda.min")
+  #   rel.coeff <- coeff.pred[2:(D+1)] 
+  #   beta.flx[1:D,q] <- ((rel.coeff != 0)+0)
+  #   
+  #   linear.flx[ind] <- predict(object = reg, newx = Y.tmp, s = "lambda.min") 
+  # }
+  # recovCIndex.flx.aft  <<- as.numeric(survConcordance(smod ~ exp(-linear.flx))[1])
+  # 
+  # 
   
   ### Prediction ####
   smod.new <-  Surv(exp(time.new), censoring.new)
@@ -154,33 +154,44 @@ multigroundtruth = function(){
   
   
    ############## Using iCluster #######
-  datas <- list(0)
-  datas[[1]] <- Y1
-  datas[[2]] <- Y2
-  cv.fit <- tune.iCluster2(datas, k)
-  fit <- iCluster2(datas, k= k, lambda= cv.fit$best.fit$lambda)
-  randindexiCLUSTER <<- adjustedRandIndex(fit$clusters,c.true)
+  cv.fit <- tune.iClusterPlus(cpus=3,dt1 = Y1, dt2= Y2,
+                              type=c("gaussian","gaussian"), K=F-1 ,n.lambda= 21,scale.lambda=c(1,1),
+                              n.burnin=200,n.draw=200,maxiter=20,sdev=0.05,eps=1.0e-4)
   
-  ### Fitting iclustre specific survival models
   
-  linear.icl <- c(0)
- 
+  ### Now choosing that clustering that gives good separability and good c-index recovery and prediction
+  ### Predicting the class labels is based on knn
+  
+  
+  recov.CIndex.icl <- c(0)
+  pred.CIndex.icl <- c(0)
+  
+  
+ for ( i in 1:21){ 
+  
+  label.train <- cv.fit[[1]][[i]]$clusters
+  label.test <- knn(train = Y, test = Y.new, cl = label.train, k = F)
+  
+  
+  
+  recov.icl <- c(0)
+  pred.icl <- c(0)
+  
+  
   for ( q in 1:F){
-    ind <- which(fit$clusters == q)
-    L= length(ind)
+    ind <- which(label.train == q)
+    ind.new <- which(label.test == q)
+    reg.aft <- cv.glmnet(x = Y[ind,], y = Surv(exp(time[ind]),censoring[ind]), family = "cox")
+    recov.icl[ind] <- predict(object =reg.aft, newx = Y[ind,], s= "lambda.min")
+    pred.icl[ind.new] <- predict(object =reg.aft, newx = Y.new[ind.new,], s= "lambda.min")
     
-    time.tmp <- time[ind]
-    censoring.tmp <- censoring[ind]
-    Y.tmp <- Y[ind,]
-    
-    reg <- cv.glmnet(x = Y.tmp, y = time.tmp, family = "gaussian")
-
-    linear.icl[ind] <- predict(object = reg, newx = Y.tmp, s = "lambda.min") 
   }
-  recovCIndex.icl.aft  <<- as.numeric(survConcordance(smod ~ exp(-linear.flx))[1])
-  
-  
-  
-  
+  recov.CIndex.icl[i]  <- as.numeric(survConcordance(smod ~ recov.icl)[1])
+  pred.CIndex.icl[i]  <- as.numeric(survConcordance(smod.new ~ pred.icl)[1])
+ }
+
+    
+  recovCIndex.icl.pcox <<- recov.CIndex.icl
+  predCIndex.icl.pcox <<- pred.CIndex.icl
   
 }
