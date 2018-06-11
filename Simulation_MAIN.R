@@ -19,7 +19,7 @@ p.dist = c(0.5,0.5)
 
 ## Total Number of features D
 
-D = 54
+D = 20
 
 ## Total Percentage of irrelevant feature
 prob.noise.feature = 0.50
