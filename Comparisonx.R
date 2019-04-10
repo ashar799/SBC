@@ -53,8 +53,8 @@ Comparisonx = function(){
   ### One has to to tune the k-NN classifier for k ###
   fitControl <- trainControl(method = "repeatedcv", number = 5,repeats = 5)
   ### Tune the parameter k 
-  knnFit <- train(x = Y, y = label.train, method =  "knn", trControl = fitControl, preProcess = c("center","scale"), tuneLength = 5)
-  knnPredict <- predict(knnFit,newdata = Y.new )
+  knnFit <- caret::train(x = as.data.frame(Y), y = label.train, method =  "knn", trControl = fitControl, preProcess = c("center","scale"), tuneLength = 5)
+  knnPredict <- predict(knnFit,newdata = as.data.frame(Y.new ))
   label.test <- knnPredict
   predRandIndex.knear <<- adjustedRandIndex(c.true.new, label.test)
   
@@ -129,8 +129,8 @@ Comparisonx = function(){
   ### One has to to tune the k-NN classifier for k ###
   fitControl <- trainControl(method = "repeatedcv", number = 5,repeats = 5)
   ### Tune the parameter k 
-  knnFit <- train(x = Y, y = label.train, method =  "knn", trControl = fitControl, preProcess = c("center","scale"), tuneLength = 5)
-  true.knn <- predict(knnFit,newdata = Y.new )
+  knnFit <- caret::train(x = as.data.frame(Y), y = label.train, method =  "knn", trControl = fitControl, preProcess = c("center","scale"), tuneLength = 5)
+  true.knn <- predict(knnFit,newdata = as.data.frame(Y.new ))
   predRandIndex.true.knear <<- adjustedRandIndex(c.true.new, true.knn)
   
   
