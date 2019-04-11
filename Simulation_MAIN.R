@@ -1,6 +1,6 @@
 ### This is the Main Function and contains a simulation case
 ### Also CHECK THE TIME REQUIRED FOR THE MODEL
-setwd("~/Dropbox/Code/DPmixturemodel/SBC")
+setwd("C:/Users/ashar/Dropbox/MasterProject/SBC/SBC")
 
 rm(list = ls())
 #################################### SIMULATED DATA PROPERTIES ####################################################
@@ -19,7 +19,7 @@ p.dist = c(0.5,0.5)
 
 ## Total Number of features D
 
-D = 20
+D = 40
 
 ## Total Percentage of irrelevant feature
 prob.noise.feature = 0.50
@@ -49,10 +49,10 @@ Comparisonx()
 
 source('ComparisionFLX.R')
 ComparisionFLX()
-
-source('ComparisionPReMiuM.R')
-ComparisionPReMiuM()
-setwd("~/Dropbox/Code/DPmixturemodel/SBC")
+# 
+# source('ComparisionPReMiuM.R')
+# ComparisionPReMiuM()
+# setwd("~/Dropbox/Code/DPmixturemodel/SBC")
 
 
 
@@ -67,8 +67,8 @@ startSBC()
 
 
 ############################# PARAMETERS for GIBB's SAMPLING ####
-iter = 20
-iter.burnin = 50
+iter = 10
+iter.burnin = 5
 iter.thin  = 2
 Nps = as.integer(iter/iter.thin)
 
